@@ -10,6 +10,8 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+  const [successOrderId, setSuccessOrderId] = useState('')
   
   // Checkout form state
   const [customerName, setCustomerName] = useState('')
@@ -139,6 +141,18 @@ function App() {
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
+  const handleSuccessModalClose = () => {
+    // 關閉成功訂單視窗並清空購物車與表單
+    setIsSuccessModalOpen(false)
+    setCart([])
+    setCustomerName('')
+    setCustomerPhone('')
+    setAddress('')
+    setPaymentMethod('transfer')
+    setLast5Digits('')
+    setIsCartOpen(false)
+  }
+
   const handleCheckout = () => {
     if (cart.length === 0) {
       alert('購物車是空的')
@@ -193,13 +207,14 @@ function App() {
       try {
         const response = JSON.parse(xhr.responseText)
         if (response.status === 'success') {
-          alert('訂單提交成功！')
-          setCart([])
-          setCustomerName('')
-          setCustomerPhone('')
-          setAddress('')
-          setPaymentMethod('transfer')
-          setLast5Digits('')
+          // 顯示訂單成功視窗並記錄訂單編號
+          if (response.orderId) {
+            setSuccessOrderId(response.orderId)
+          } else {
+            setSuccessOrderId('（無法取得訂單編號）')
+          }
+          setIsSuccessModalOpen(true)
+          // 成功後關閉購物車側邊欄，實際清空動作放在關閉成功視窗時
           setIsCartOpen(false)
         } else {
           alert(`訂單提交失敗: ${response.message || '未知錯誤'}`)
@@ -324,6 +339,76 @@ function App() {
           onCheckout={handleCheckout}
           isSubmitting={isSubmitting}
         />
+      )}
+
+      {/* Order Success Modal */}
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          {/* 讓內容在小螢幕時可以捲動、避免被螢幕吃掉底部按鈕 */}
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6">
+            {/* 標題 */}
+            <h2 className="text-2xl font-bold text-green-700 mb-3 text-center">
+              訂單已送出！(Order Placed)
+            </h2>
+
+            {/* 說明文字 */}
+            <p className="text-sm text-earth-700 mb-4 text-center">
+              您的訂單已成功送出，請記下以下訂單編號：
+            </p>
+
+            {/* 訂單編號 + 複製按鈕 */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <span className="text-xl md:text-2xl font-extrabold text-earth-900 tracking-wide break-all">
+                {successOrderId}
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!successOrderId) return
+                  try {
+                    await navigator.clipboard.writeText(successOrderId)
+                    alert('已複製訂單編號')
+                  } catch (err) {
+                    console.error('Copy failed', err)
+                    alert('複製失敗，請手動複製訂單編號')
+                  }
+                }}
+                className="px-3 py-1.5 text-xs md:text-sm rounded-full bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
+              >
+                複製單號 (Copy ID)
+              </button>
+            </div>
+
+            {/* CTA 說明文字 */}
+            <p className="text-sm text-earth-700 mb-3 text-center">
+              請加入官方帳號，輸入「查單 + 單號」查詢進度
+            </p>
+
+            {/* 前往 LINE 官方帳號按鈕 */}
+            <a
+              href="https://lin.ee/KOFaonp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full mb-3"
+            >
+              <button
+                type="button"
+                className="w-full py-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-colors"
+              >
+                前往 LINE 官方帳號 (Go to LINE)
+              </button>
+            </a>
+
+            {/* 關閉並清空購物車 */}
+            <button
+              type="button"
+              onClick={handleSuccessModalClose}
+              className="w-full py-2.5 mt-1 rounded-lg bg-earth-800 text-white text-sm font-medium hover:bg-earth-900 transition-colors"
+            >
+              關閉並清空購物車
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
