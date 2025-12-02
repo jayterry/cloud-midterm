@@ -12,6 +12,8 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [successOrderId, setSuccessOrderId] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
+  const [isToastVisible, setIsToastVisible] = useState(false)
   
   // Checkout form state
   const [customerName, setCustomerName] = useState('')
@@ -111,6 +113,14 @@ function App() {
     ? products 
     : products.filter(p => p.brand === selectedBrand)
 
+  const showToast = (message) => {
+    setToastMessage(message)
+    setIsToastVisible(true)
+    setTimeout(() => {
+      setIsToastVisible(false)
+    }, 2000)
+  }
+
   const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id)
     if (existingItem) {
@@ -122,6 +132,7 @@ function App() {
     } else {
       setCart([...cart, { ...product, quantity: 1 }])
     }
+    showToast('已加入購物車')
   }
 
   const removeFromCart = (productId) => {
@@ -407,6 +418,15 @@ function App() {
             >
               關閉並清空購物車
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 簡單 Toast 通知 */}
+      {isToastVisible && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70]">
+          <div className="bg-earth-800 text-white px-4 py-2 rounded-full shadow-lg text-sm">
+            {toastMessage}
           </div>
         </div>
       )}
